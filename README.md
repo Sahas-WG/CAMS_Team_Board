@@ -45,16 +45,23 @@ copy on a local disk.
 
 ## Deploy to AWS Amplify
 
-`amplify.yml` is already set up (Node 20, `npm ci`, `npm run build`, publish `dist/team-board/browser`).
+The site is hosted on the Amplify app **CAMS-Team-Board** (`d2f750kn9utf8t`, ap-southeast-2):
+https://main.d2f750kn9utf8t.amplifyapp.com
 
-1. Create an empty repository on GitHub and push this one to it:
-   ```bash
-   git remote add origin https://github.com/<owner>/<repo>.git
-   git push -u origin main
-   ```
-2. In the AWS Amplify console choose **Create new app**, pick GitHub, select the repository and the
-   `main` branch. Amplify reads `amplify.yml`; accept the detected settings and deploy.
-3. Every later `git push` to `main` rebuilds and redeploys the site.
+The app is not connected to GitHub, so a `git push` does not deploy. To publish the current code:
+
+```bash
+npm run deploy
+```
+
+That builds the site and runs `scripts/deploy.py`, which zips `dist/team-board/browser`, uploads it
+to Amplify and waits for the result. It needs Python and the AWS CLI signed in to the account that
+owns the app.
+
+**To deploy on every push instead**, connect the repository in the Amplify console (it asks you to
+authorise GitHub in the browser). `amplify.yml` already holds the build settings (Node 20, `npm ci`,
+`npm run build`, publish `dist/team-board/browser`). If the console will not attach a repository to
+this manually deployed app, create a new app from the repository there and delete this one.
 
 ## Layout
 

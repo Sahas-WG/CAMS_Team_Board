@@ -6,7 +6,8 @@
     "start": "node node_modules/@angular/cli/bin/ng.js serve",
     "build": "node node_modules/@angular/cli/bin/ng.js build",
     "watch": "node node_modules/@angular/cli/bin/ng.js build --watch --configuration development",
-    "test": "node node_modules/@angular/cli/bin/ng.js test"
+    "test": "node node_modules/@angular/cli/bin/ng.js test",
+    "deploy": "npm run build && python scripts/deploy.py"
   },
   "prettier": {
     "printWidth": 100,
