@@ -1,4 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, computed, inject, signal } from '@angular/core';
+import { AmplifyAuthenticatorModule } from '@aws-amplify/ui-angular';
+import { fetchUserAttributes, getCurrentUser } from 'aws-amplify/auth';
+import { Hub } from 'aws-amplify/utils';
 import { FormsModule } from '@angular/forms';
 import { BoardStore } from './board.store';
 import { Icon } from './icon';
@@ -15,12 +18,47 @@ type MemberDraft = { id: string | null; name: string; role: string };
   selector: 'app-root',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, Icon, SelectValue],
+  imports: [FormsModule, Icon, SelectValue, AmplifyAuthenticatorModule],
+  host: { '(window:focus)': 'store.refresh()' },
   templateUrl: './app.html',
   styleUrl: './app.scss',
 })
-export class App {
+export class App implements OnDestroy {
   readonly store = inject(BoardStore);
+
+  /** Labels on the sign-in form. Accounts are created by invitation, so sign-up is hidden. */
+  readonly formFields = {
+    signIn: {
+      username: { label: 'Work email', placeholder: 'name@organisation.com', isRequired: true },
+      password: { label: 'Password', placeholder: 'Your password', isRequired: true },
+    },
+  };
+  readonly syncText = computed(() => ({ idle: 'Saved', saving: 'Saving\u2026', error: 'Not saved' })[this.store.sync()]);
+
+  private readonly stopHub: () => void;
+  /** Other people's changes arrive on this timer, and whenever the window regains focus. */
+  private readonly poll = setInterval(() => this.store.refresh(), 30_000);
+
+  constructor() {
+    // The board loads only once there is a Cognito session: the bucket needs its credentials.
+    this.start();
+    this.stopHub = Hub.listen('auth', ({ payload }) => {
+      if (payload.event === 'signedIn') this.start();
+      if (payload.event === 'signedOut') this.store.reset();
+    });
+  }
+  ngOnDestroy() { clearInterval(this.poll); this.stopHub(); }
+
+  private async start() {
+    try {
+      const u = await getCurrentUser();
+      let email = u.signInDetails?.loginId ?? '';
+      try { email = (await fetchUserAttributes()).email ?? email; } catch { /* attributes are optional */ }
+      this.store.user = email;
+    } catch { return; /* not signed in yet */ }
+    await this.store.init();
+  }
+
   readonly statuses = STATUSES;
   readonly statusClass = statusClass; readonly fmtDateShort = fmtDateShort;
   readonly today = new Date();
@@ -108,7 +146,7 @@ export class App {
   async importBoard(e: Event) {
     const input = e.target as HTMLInputElement; const file = input.files?.[0]; input.value = '';
     if (!file) return;
-    if (this.store.data().items.length && !confirm('Replace the board in this browser with ' + file.name + '?')) return;
+    if (!confirm('Replace the shared board for everyone with ' + file.name + '?')) return;
     try { this.store.importJson(await file.text()); } catch { alert('That file is not a Team Board export.'); }
   }
 }

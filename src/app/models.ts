@@ -32,6 +32,10 @@ export interface BoardData {
   leads: Record<string, string>;
   /** Next number to hand out for Item.id. */
   nextId: number;
+  /** Counts saves of the shared board; with who and when the last one was. */
+  rev: number;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
-export const EMPTY_BOARD: BoardData = { members: [], items: [], leads: {}, nextId: 1 };
+export const EMPTY_BOARD: BoardData = { members: [], items: [], leads: {}, nextId: 1, rev: 0 };

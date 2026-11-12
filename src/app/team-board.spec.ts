@@ -5,7 +5,7 @@ const member = (id: string, name: string): Member => ({ id, name, role: '' });
 const item = (id: string, ownerId: string, status: string, due = '', area = 'General', project = ''): Item =>
   ({ id, title: 'Item ' + id, ownerIds: ownerId ? ownerId.split('+') : [], area, project, status, due, notes: '' });
 const board = (items: Item[], leads: Record<string, string> = {}): BoardData =>
-  ({ members: [member('a', 'Ann Lee'), member('b', 'Bob Ray'), member('c', 'Cy')], items, leads, nextId: 99 });
+  ({ members: [member('a', 'Ann Lee'), member('b', 'Bob Ray'), member('c', 'Cy')], items, leads, nextId: 99, rev: 0 });
 
 describe('buildBoard', () => {
   const today = new Date(2026, 10, 11, 9, 30);

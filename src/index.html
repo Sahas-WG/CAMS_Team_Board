@@ -6,6 +6,8 @@
   <base href="/">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <link rel="icon" type="image/x-icon" href="favicon.ico">
+  <!-- aws-amplify/storage (loaded lazily) references Node's `global`; the production bundle has no shim for it. -->
+  <script>window.global = window;</script>
 </head>
 <body>
   <app-root></app-root>

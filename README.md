@@ -17,19 +17,28 @@ Sequencer app and is a separate project with no dependency on it.
   delete it, click a person's name to rename, reorder or remove them. Removing a person leaves their
   tasks on the board in an Unassigned lane.
 
-## Where the data lives
+## Sign-in and where the data lives
 
-**In the browser only.** The board is kept in that browser's `localStorage`, so each person who opens
-the site sees their own copy. Use **Export** to download the board as a JSON file and **Import** to
-load one. `sample-board.json` is an example you can import to see a filled board.
+**Sign-in.** The page is behind the same Cognito user pool as the Sequencer, so anyone with a
+Sequencer account signs in here with the same email and password. Accounts are by invitation; there
+is no sign-up.
 
-That makes this version a single-keeper tool: one person maintains the board and shares their screen
-or the export. For a board the whole team edits, the app needs sign-in and shared storage. The code is
-ready for that: `src/app/board.store.ts` is the only file that touches storage (`load` and `persist`).
+**One shared board.** Everyone signed in sees and edits the same board. It is a single JSON object,
+`team-board/board.json`, in the private bucket `cams-sequencer-plans`, reached with the short-lived
+credentials the sign-in provides. There is no API key in the browser.
 
-There is also **no sign-in**. Anyone with the hosted URL can open the page, although they would see an
-empty board, not yours. Do not treat the URL as private once shared storage is added without also
-adding sign-in.
+**How edits are saved.** A change shows at once, then the app re-reads the shared board, applies the
+same change to that fresh copy and writes it back. Two people editing different things at the same
+moment both keep their change. Other people's changes arrive every 30 seconds and whenever the window
+regains focus. The header shows Saved, Saving or Not saved.
+
+**Export and Import.** Export downloads the board as a file, a handy backup. Import replaces the
+shared board for everyone, so it asks first. `sample-board.json` is an example.
+
+**One-off AWS setup.** `python scripts/setup-aws.py` gives the signed-in role access to the
+`team-board/` folder and adds the site addresses to the bucket's CORS list. It is safe to re-run, and
+has to be run once by someone allowed to change IAM. Everything is in `src/app/aws-config.ts` and
+`src/app/board.backends.ts` if the board ever moves to its own pool or bucket.
 
 ## Run, build, test
 
@@ -47,7 +56,9 @@ copy on a local disk.
 ## Deploy to AWS Amplify
 
 The site is hosted on the Amplify app **CAMS-Team-Board** (`d2f750kn9utf8t`, ap-southeast-2):
-https://main.d2f750kn9utf8t.amplifyapp.com
+https://cams-team-board.d2f750kn9utf8t.amplifyapp.com
+
+The older address https://main.d2f750kn9utf8t.amplifyapp.com is kept and gets the same build.
 
 The app is not connected to GitHub, so a `git push` does not deploy. To publish the current code:
 
@@ -68,6 +79,7 @@ this manually deployed app, create a new app from the repository there and delet
 
 - `src/app/models.ts`: the data contract (people, tasks, area leads).
 - `src/app/team-board.ts`: pure board logic (lanes, sorting, filters, responsibilities), with a spec.
-- `src/app/board.store.ts`: the store and the only storage code, with a spec.
+- `src/app/board.store.ts`: the store (optimistic edits, save by replaying onto the latest board), with a spec.
+- `src/app/board.backends.ts`, `src/app/aws-config.ts`: where the board is kept and the AWS ids.
 - `src/app/app.{ts,html,scss}`: the page and its two dialogs.
 - `src/styles.scss`: CAMS design tokens and shared styles.

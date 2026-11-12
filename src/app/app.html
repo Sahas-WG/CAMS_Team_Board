@@ -1,21 +1,53 @@
+<amplify-authenticator [hideSignUp]="true" [formFields]="formFields">
+  <ng-template amplifySlot="header">
+    <div class="auth-brand">
+      <img class="auth-logo" src="assets/cams-logo-mark.png" alt="CAMS" />
+      <div class="auth-name">Team Board</div>
+    </div>
+  </ng-template>
+  <ng-template amplifySlot="sign-in-header">
+    <div class="auth-card-hd">
+      <h2>Sign in</h2>
+      <p>Use the work email your project coordinator set up for you.</p>
+    </div>
+  </ng-template>
+  <ng-template amplifySlot="footer">
+    <div class="auth-foot">
+      <span>Access is by invitation. If you need an account or cannot sign in, ask your project coordinator.</span>
+    </div>
+  </ng-template>
+
+  <ng-template amplifySlot="authenticated" let-signOut="signOut">
 <header class="topbar">
   <img class="logo" src="assets/cams-logo-mark.png" alt="CAMS" />
   <div class="brand"><b>Team Board</b></div>
   <div class="tools">
+    @if (store.loaded()) { <span class="sync" [class.bad]="store.sync() === 'error'" [title]="store.data().updatedBy ? 'Last saved by ' + store.data().updatedBy : ''">{{ syncText() }}</span> }
     <button class="btn btn-ghost" (click)="exportBoard()" title="Download the board as a file"><app-icon name="download" [size]="15" /> Export</button>
-    <label class="btn btn-ghost" title="Load a board from a file">
+    <label class="btn btn-ghost" title="Replace the shared board with one from a file">
       <app-icon name="upload" [size]="15" /> Import
       <input type="file" accept=".json,application/json" (change)="importBoard($event)" hidden />
     </label>
     <button class="btn btn-secondary" (click)="newMember()"><app-icon name="plus" [size]="15" /> Person</button>
+    <button class="btn btn-ghost" (click)="signOut()" title="Sign out">Sign out</button>
   </div>
 </header>
 
 <main class="content">
-  @if (!store.data().members.length) {
+  @if (!store.loaded()) {
+    <div class="welcome">
+      @if (store.sync() === 'error') {
+        <h1>The board could not be loaded</h1>
+        <p>Check your connection, then try again. If it keeps failing, your account may not have access yet.</p>
+        <button class="btn btn-primary" (click)="store.refresh()">Try again</button>
+      } @else {
+        <p>Loading the board…</p>
+      }
+    </div>
+  } @else if (!store.data().members.length) {
     <div class="welcome">
       <h1>Start with your team</h1>
-      <p>Add each person as a lane, then give them tasks. Nothing leaves this browser unless you export it.</p>
+      <p>Add each person as a lane, then give them tasks. Everyone who signs in sees and edits this same board.</p>
       <button class="btn btn-primary" (click)="newMember()"><app-icon name="plus" [size]="15" /> Add the first person</button>
     </div>
   } @else {
@@ -193,3 +225,5 @@
     </form>
   </div>
 }
+  </ng-template>
+</amplify-authenticator>

@@ -164,3 +164,55 @@ textarea.ein { resize: vertical; line-height: 1.4; }
 .addbtn:hover { background: #E4ECFD; }
 
 ::selection { background: var(--blue-lt); color: var(--navy); }
+
+/* ============================================================
+   Sign-in (Amplify Authenticator), in CAMS colours and type.
+   The Authenticator reads these tokens; ours load after its stylesheet, so they win.
+   The layout rules below apply only while signed out: once signed in, Amplify renders the
+   app without the [data-amplify-authenticator] wrapper.
+   ============================================================ */
+:root, [data-amplify-theme] {
+  --amplify-fonts-default-variable: var(--font); --amplify-fonts-default-static: var(--font);
+  --amplify-colors-primary-10: var(--blue-tint); --amplify-colors-primary-20: var(--blue-lt); --amplify-colors-primary-40: var(--blue-mid);
+  --amplify-colors-primary-60: #6B8FEF; --amplify-colors-primary-80: var(--blue); --amplify-colors-primary-90: var(--blue-hover); --amplify-colors-primary-100: var(--blue-press);
+  --amplify-colors-border-focus: var(--blue); --amplify-colors-border-primary: var(--border);
+  --amplify-colors-font-interactive: var(--blue); --amplify-colors-font-hover: var(--blue-hover); --amplify-colors-font-focus: var(--blue-press); --amplify-colors-font-active: var(--blue-press);
+  --amplify-radii-small: var(--r-md); --amplify-radii-medium: var(--r-lg);
+  --amplify-components-fieldcontrol-font-size: 14px; --amplify-components-fieldcontrol-padding-block-start: 11px; --amplify-components-fieldcontrol-padding-block-end: 11px;
+  --amplify-components-fieldcontrol-padding-inline-start: 14px; --amplify-components-fieldcontrol-padding-inline-end: 14px;
+  --amplify-components-fieldcontrol-focus-box-shadow: 0 0 0 3px rgba(43, 92, 230, .14);
+  --amplify-components-authenticator-container-width-max: 26.5rem;
+  --amplify-components-authenticator-form-padding: 8px 32px 28px;
+  --amplify-components-authenticator-router-border-width: 1px; --amplify-components-authenticator-router-border-color: var(--border);
+  --amplify-components-authenticator-router-box-shadow: 0 10px 32px rgba(15, 23, 42, .10), 0 1px 2px rgba(15, 23, 42, .06);
+}
+
+/* the page: a city skyline (assets/sign-in.jpg, 1920px, licensed stock) faded over the app's grey,
+   with the card centred on it */
+[data-amplify-authenticator] { position: relative; isolation: isolate; min-height: 100vh; padding: 48px 16px; display: grid; align-content: center; justify-items: center;
+  background: var(--bg-app); }
+/* The photo is held well back and fades in from the top: clear grey behind the brand, the
+   skyline emerging beneath the card. */
+[data-amplify-authenticator]::before { content: ''; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: url('/assets/sign-in.jpg') center 42% / cover no-repeat; opacity: .16;
+  -webkit-mask-image: linear-gradient(180deg, transparent 0%, transparent 22%, rgba(0, 0, 0, .25) 48%, rgba(0, 0, 0, .7) 78%, #000 100%);
+  mask-image: linear-gradient(180deg, transparent 0%, transparent 22%, rgba(0, 0, 0, .25) 48%, rgba(0, 0, 0, .7) 78%, #000 100%); }
+[data-amplify-authenticator] [data-amplify-router] { border-radius: var(--r-xl); overflow: hidden; }
+[data-amplify-authenticator] amplify-federated-sign-in { display: none; }
+
+.auth-brand { display: grid; justify-items: center; gap: 6px; margin-bottom: 28px; text-align: center; color: var(--fg-1); }
+.auth-logo { height: 40px; width: auto; margin-bottom: 8px; }
+.auth-name { font-size: 26px; font-weight: 300; letter-spacing: .02em; line-height: 1; }
+.auth-sub { font-size: 13px; color: var(--fg-4); }
+
+.auth-card-hd { padding: 28px 32px 6px; }
+.auth-card-hd h2 { font-size: var(--text-xl); font-weight: 600; letter-spacing: -.01em; margin-bottom: 6px; }
+.auth-card-hd p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--fg-4); }
+
+[data-amplify-authenticator] .amplify-label { font-size: 12px; font-weight: 500; color: var(--fg-3); }
+[data-amplify-authenticator] .amplify-input { color: var(--fg-1); }
+[data-amplify-authenticator] .amplify-button--primary { font-weight: 600; font-size: 14px; padding-block: 12px; margin-top: 6px; }
+[data-amplify-authenticator] .amplify-button--link { font-size: 13px; }
+[data-amplify-authenticator] [data-amplify-footer] { padding-block-start: 0; }
+
+.auth-foot { max-width: 26.5rem; margin-top: 22px; text-align: center; font-size: 12.5px; line-height: 1.5; color: var(--fg-4); }

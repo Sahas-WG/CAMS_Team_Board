@@ -1,6 +1,6 @@
 {
   "name": "team-board",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "scripts": {
     "ng": "node node_modules/@angular/cli/bin/ng.js",
     "start": "node node_modules/@angular/cli/bin/ng.js serve",
@@ -28,6 +28,8 @@
     "@angular/core": "^20.3.0",
     "@angular/forms": "^20.3.0",
     "@angular/platform-browser": "^20.3.0",
+    "@aws-amplify/ui-angular": "^5.3.5",
+    "aws-amplify": "^6.18.0",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "zone.js": "~0.15.0"
