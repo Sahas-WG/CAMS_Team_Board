@@ -51,6 +51,9 @@ button.nm:hover .n { color: var(--blue); }
 .col.un .cnt { background: var(--warning-bg); color: #8B5100; }
 .add { width: 24px; height: 24px; flex-shrink: 0; display: grid; place-items: center; border: 1px solid var(--border); border-radius: var(--r-sm);
   background: #fff; color: var(--fg-4); cursor: pointer; }
+/* the icon host is inline by default and would sit on the text baseline, low and to one side */
+.add { padding: 0; line-height: 0; }
+.add app-icon, .add app-icon svg { display: block; }
 .add:hover { border-color: var(--blue); color: var(--blue); background: var(--blue-lt); }
 
 .cards { flex: 1; overflow-y: auto; padding: 10px 9px; display: flex; flex-direction: column; gap: 8px; }
