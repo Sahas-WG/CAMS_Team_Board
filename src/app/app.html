@@ -111,6 +111,11 @@
                   </div>
                   <div class="ttl">{{ k.item.title }}</div>
                   <div class="ft">
+                    @if (k.owners.length > 1) {
+                      <span class="own" [title]="'Shared: ' + ownerNames(k.owners)">
+                        @for (m of k.owners; track m.id) { <i [style.background]="colourOf(m.id)">{{ initialsOf(m.name) }}</i> }
+                      </span>
+                    }
                     <span class="tag">{{ k.item.area }}{{ k.item.area && k.item.project ? ' · ' : '' }}{{ k.item.project }}</span>
                     @if (k.dueDate) { <span class="due" [class.late]="k.overdue" [title]="k.overdue ? 'Overdue' : 'Due'">{{ fmtDateShort(k.dueDate) }}</span> }
                   </div>
@@ -132,11 +137,17 @@
       <h2>{{ d.id ? 'Task ' + d.id : 'New task' }}</h2>
       <label class="f full"><span>Task</span>
         <input class="fin" name="title" [(ngModel)]="d.title" placeholder="What needs doing" required autofocus /></label>
-      <label class="f"><span>Owner</span>
-        <select class="fin" name="owner" [(ngModel)]="d.ownerId">
-          <option value="">Unassigned</option>
-          @for (m of store.data().members; track m.id) { <option [value]="m.id">{{ m.name }}</option> }
-        </select></label>
+      <div class="f full"><span>Owners</span>
+        <div class="owners">
+          @for (m of store.data().members; track m.id) {
+            <button type="button" class="pick" [class.on]="d.ownerIds.includes(m.id)" (click)="toggleOwner(m.id)"
+                    [style.--pc]="colourOf(m.id)" [attr.aria-pressed]="d.ownerIds.includes(m.id)">
+              <i>{{ initialsOf(m.name) }}</i>{{ m.name }}
+            </button>
+          }
+        </div>
+        <small class="hint">{{ d.ownerIds.length > 1 ? 'Shared: it shows in each of their lanes.' : d.ownerIds.length ? '' : 'Nobody picked: it goes to Unassigned.' }}</small>
+      </div>
       <label class="f"><span>Status</span>
         <select class="fin" name="status" [(ngModel)]="d.status">
           @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }

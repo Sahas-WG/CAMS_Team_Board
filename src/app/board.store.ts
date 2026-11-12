@@ -3,6 +3,13 @@ import { BoardData, EMPTY_BOARD, Item, Member } from './models';
 
 const LS_KEY = 'cams-team-board/v1';
 
+/** Owners of a stored task: the current list, or the single `ownerId` that boards saved before shared cards carry. */
+function ownersOf(i: unknown): string[] {
+  const o = i as { ownerIds?: unknown; ownerId?: unknown };
+  const list = Array.isArray(o.ownerIds) ? o.ownerIds : typeof o.ownerId === 'string' ? [o.ownerId] : [];
+  return [...new Set(list.filter((x): x is string => typeof x === 'string' && x !== ''))];
+}
+
 /** Tolerant read of whatever was stored or imported, so an old or hand-edited file still loads. */
 export function reviveBoard(raw: unknown): BoardData {
   const o = (raw && typeof raw === 'object' ? raw : {}) as Partial<BoardData>;
@@ -11,7 +18,7 @@ export function reviveBoard(raw: unknown): BoardData {
     .filter(m => m && str(m.id)).map(m => ({ id: str(m.id), name: str(m.name) || 'Unnamed', role: str(m.role) }));
   const items: Item[] = (Array.isArray(o.items) ? o.items : [])
     .filter(i => i && str(i.id)).map(i => ({
-      id: str(i.id), title: str(i.title) || 'Untitled', ownerId: str(i.ownerId), area: str(i.area), project: str(i.project),
+      id: str(i.id), title: str(i.title) || 'Untitled', ownerIds: ownersOf(i), area: str(i.area), project: str(i.project),
       status: str(i.status) || 'Not started', due: /^\d{4}-\d{2}-\d{2}$/.test(str(i.due)) ? str(i.due) : '', notes: str(i.notes),
     }));
   const leads: Record<string, string> = {};
@@ -54,11 +61,11 @@ export class BoardStore {
   updateMember(id: string, patch: Partial<Omit<Member, 'id'>>) {
     this.mutate(d => { const m = d.members.find(x => x.id === id); if (m) Object.assign(m, patch); });
   }
-  /** Their items stay on the board and fall into the Unassigned lane. */
+  /** Their tasks stay on the board: shared ones with the other owners, the rest in the Unassigned lane. */
   removeMember(id: string) {
     this.mutate(d => {
       d.members = d.members.filter(m => m.id !== id);
-      d.items.forEach(i => { if (i.ownerId === id) i.ownerId = ''; });
+      d.items.forEach(i => { i.ownerIds = i.ownerIds.filter(o => o !== id); });
       for (const [area, lead] of Object.entries(d.leads)) if (lead === id) delete d.leads[area];
     });
   }

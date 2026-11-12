@@ -6,19 +6,19 @@
     { "id": "m4", "name": "Isuru Jayathissa", "role": "Software Development" }
   ],
   "items": [
-    { "id": "T01", "title": "Confirm data field configuration with the client", "ownerId": "m1", "area": "Data Repository", "project": "UoM", "status": "In progress", "due": "2026-11-20", "notes": "" },
-    { "id": "T02", "title": "Weekly status report", "ownerId": "m1", "area": "Project Management", "project": "UoM", "status": "Not started", "due": "2026-11-13", "notes": "" },
-    { "id": "T03", "title": "Kick-off and mobilisation", "ownerId": "m1", "area": "Project Management", "project": "UoM", "status": "Complete", "due": "2026-11-09", "notes": "" },
-    { "id": "T04", "title": "Configure reporting on the first building", "ownerId": "m2", "area": "Reporting", "project": "UoM", "status": "In progress", "due": "2026-11-27", "notes": "" },
-    { "id": "T05", "title": "Draft the standard report templates", "ownerId": "m2", "area": "Reporting", "project": "UoM", "status": "Not started", "due": "2026-12-04", "notes": "" },
-    { "id": "T06", "title": "Plan the hypercare roster", "ownerId": "m2", "area": "Hypercare", "project": "UoM", "status": "Not started", "due": "2027-02-19", "notes": "" },
-    { "id": "T07", "title": "User guide refresh", "ownerId": "m2", "area": "Training", "project": "Internal", "status": "Blocked", "due": "2026-11-06", "notes": "Waiting on screenshots from the new build." },
-    { "id": "T08", "title": "Load the asset audit templates", "ownerId": "m3", "area": "Data Migration", "project": "UoM", "status": "Not started", "due": "2026-11-24", "notes": "" },
-    { "id": "T09", "title": "Set up the mobile app against the repository", "ownerId": "m3", "area": "Mobile", "project": "UoM", "status": "Not started", "due": "2026-12-11", "notes": "" },
-    { "id": "T10", "title": "Agree identity provider and protocol", "ownerId": "m4", "area": "Users & SSO", "project": "UoM", "status": "In progress", "due": "2026-11-18", "notes": "" },
-    { "id": "T11", "title": "Map identity attributes to user roles", "ownerId": "m4", "area": "Users & SSO", "project": "UoM", "status": "Not started", "due": "2026-12-02", "notes": "" },
-    { "id": "T12", "title": "Enable SSO on mobile devices", "ownerId": "m4", "area": "Mobile", "project": "UoM", "status": "Not started", "due": "2026-12-16", "notes": "" },
-    { "id": "T13", "title": "Decide who owns the release notes", "ownerId": "", "area": "Project Management", "project": "Internal", "status": "Not started", "due": "", "notes": "" }
+    { "id": "T01", "title": "Confirm data field configuration with the client", "ownerIds": ["m1"], "area": "Data Repository", "project": "UoM", "status": "In progress", "due": "2026-11-20", "notes": "" },
+    { "id": "T02", "title": "Weekly status report", "ownerIds": ["m1"], "area": "Project Management", "project": "UoM", "status": "Not started", "due": "2026-11-13", "notes": "" },
+    { "id": "T03", "title": "Kick-off and mobilisation", "ownerIds": ["m1"], "area": "Project Management", "project": "UoM", "status": "Complete", "due": "2026-11-09", "notes": "" },
+    { "id": "T04", "title": "Configure reporting on the first building", "ownerIds": ["m2"], "area": "Reporting", "project": "UoM", "status": "In progress", "due": "2026-11-27", "notes": "" },
+    { "id": "T05", "title": "Draft the standard report templates", "ownerIds": ["m2"], "area": "Reporting", "project": "UoM", "status": "Not started", "due": "2026-12-04", "notes": "" },
+    { "id": "T06", "title": "Plan the hypercare roster", "ownerIds": ["m2"], "area": "Hypercare", "project": "UoM", "status": "Not started", "due": "2027-02-19", "notes": "" },
+    { "id": "T07", "title": "User guide refresh", "ownerIds": ["m2"], "area": "Training", "project": "Internal", "status": "Blocked", "due": "2026-11-06", "notes": "Waiting on screenshots from the new build." },
+    { "id": "T08", "title": "Load the asset audit templates", "ownerIds": ["m3"], "area": "Data Migration", "project": "UoM", "status": "Not started", "due": "2026-11-24", "notes": "" },
+    { "id": "T09", "title": "Set up the mobile app against the repository", "ownerIds": ["m3"], "area": "Mobile", "project": "UoM", "status": "Not started", "due": "2026-12-11", "notes": "" },
+    { "id": "T10", "title": "Agree identity provider and protocol", "ownerIds": ["m4"], "area": "Users & SSO", "project": "UoM", "status": "In progress", "due": "2026-11-18", "notes": "" },
+    { "id": "T11", "title": "Map identity attributes to user roles", "ownerIds": ["m4"], "area": "Users & SSO", "project": "UoM", "status": "Not started", "due": "2026-12-02", "notes": "" },
+    { "id": "T12", "title": "Enable SSO on mobile devices", "ownerIds": ["m4", "m3"], "area": "Mobile", "project": "UoM", "status": "Not started", "due": "2026-12-16", "notes": "" },
+    { "id": "T13", "title": "Decide who owns the release notes", "ownerIds": [], "area": "Project Management", "project": "Internal", "status": "Not started", "due": "", "notes": "" }
   ],
   "leads": { "Mobile": "m3" },
   "nextId": 14

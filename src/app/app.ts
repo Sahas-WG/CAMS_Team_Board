@@ -4,7 +4,7 @@ import { BoardStore } from './board.store';
 import { Icon } from './icon';
 import { SelectValue } from './select-value';
 import { Item, STATUSES } from './models';
-import { BoardMode, SOON_DAYS, UNASSIGNED, buildBoard } from './team-board';
+import { BoardMode, SOON_DAYS, UNASSIGNED, boardTotals, buildBoard, initialsOf } from './team-board';
 import { fmtDateShort, statusClass } from './util';
 
 type ItemDraft = Omit<Item, 'id'> & { id: string | null };
@@ -37,18 +37,15 @@ export class App {
   readonly project = signal('');
 
   readonly columns = computed(() => buildBoard(this.store.data(), this.today, this.mode(), this.project()));
-  readonly totals = computed(() => {
-    const cs = this.columns();
-    return {
-      open: cs.reduce((s, c) => s + c.open, 0),
-      overdue: cs.reduce((s, c) => s + c.overdue, 0),
-      unassigned: cs.find(c => c.unassigned)?.open ?? 0,
-    };
-  });
+  readonly totals = computed(() => boardTotals(this.store.data(), this.today, this.project()));
 
   /** One colour per person, by lane order, so a lane is recognisable at a glance. */
   private readonly palette = ['#2B5CE6', '#0E9F9A', '#7C5CE0', '#E0782B', '#D6457A', '#3A9B4B', '#B8860B'];
   personColour(i: number) { return this.palette[i % this.palette.length]; }
+  /** The same colour by person, for the owner badges on a shared card. */
+  colourOf(memberId: string) { return this.personColour(Math.max(0, this.store.data().members.findIndex(m => m.id === memberId))); }
+  readonly initialsOf = initialsOf;
+  ownerNames(ms: { name: string }[]) { return ms.map(m => m.name).join(', '); }
 
   readonly openAreas = signal<Set<string>>(new Set());
   isAreaOpen(k: string) { return this.openAreas().has(k); }
@@ -60,9 +57,14 @@ export class App {
   // ---- task dialog
   readonly itemDraft = signal<ItemDraft | null>(null);
   newItem(laneKey: string) {
-    this.itemDraft.set({ id: null, title: '', ownerId: laneKey === UNASSIGNED ? '' : laneKey, area: '', project: this.project(), status: 'Not started', due: '', notes: '' });
+    this.itemDraft.set({ id: null, title: '', ownerIds: laneKey === UNASSIGNED ? [] : [laneKey], area: '', project: this.project(), status: 'Not started', due: '', notes: '' });
   }
-  editItem(item: Item) { this.itemDraft.set({ ...item }); }
+  editItem(item: Item) { this.itemDraft.set({ ...item, ownerIds: [...item.ownerIds] }); }
+  /** Tick or untick a person on the task being edited. */
+  toggleOwner(id: string) {
+    const d = this.itemDraft(); if (!d) return;
+    this.itemDraft.set({ ...d, ownerIds: d.ownerIds.includes(id) ? d.ownerIds.filter(o => o !== id) : [...d.ownerIds, id] });
+  }
   saveItem() {
     const d = this.itemDraft(); if (!d) return;
     const { id, ...rest } = d;
@@ -91,7 +93,7 @@ export class App {
   }
   deleteMember() {
     const d = this.memberDraft(); if (!d?.id) return;
-    if (!confirm('Remove ' + d.name + ' from the board? Their tasks stay and move to Unassigned.')) return;
+    if (!confirm('Remove ' + d.name + ' from the board? Their tasks stay: shared ones with the other owners, the rest in Unassigned.')) return;
     this.store.removeMember(d.id); this.memberDraft.set(null);
   }
   moveMember(by: -1 | 1) { const d = this.memberDraft(); if (d?.id) this.store.moveMember(d.id, by); }

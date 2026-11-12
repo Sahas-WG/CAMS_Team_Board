@@ -9,12 +9,14 @@ describe('reviveBoard', () => {
   it('fills gaps, drops rows without an id and bad dates, and keeps numbering ahead of existing items', () => {
     const d = reviveBoard({
       members: [{ id: 'a', name: 'Ann' }, { name: 'no id' }],
-      items: [{ id: 'T07', title: 'One', ownerId: 'a', due: '2026-12-01' }, { id: 'T03', due: 'next week' }, { title: 'no id' }],
+      items: [{ id: 'T07', title: 'One', ownerId: 'a', due: '2026-12-01' }, { id: 'T03', due: 'next week', ownerIds: ['a', 'b', 'a', '', 7] }, { title: 'no id' }],
       leads: { Reporting: 'a', Empty: '' },
       nextId: 2,
     });
     expect(d.members).toEqual([{ id: 'a', name: 'Ann', role: '' }]);
     expect(d.items.map(i => [i.id, i.title, i.status, i.due])).toEqual([['T07', 'One', 'Not started', '2026-12-01'], ['T03', 'Untitled', 'Not started', '']]);
+    // a board saved before shared cards has one ownerId; the list form is de-duplicated and cleaned
+    expect(d.items.map(i => i.ownerIds)).toEqual([['a'], ['a', 'b']]);
     expect(d.leads).toEqual({ Reporting: 'a' });
     expect(d.nextId).toBe(8);
   });
@@ -23,7 +25,7 @@ describe('reviveBoard', () => {
 describe('BoardStore', () => {
   let store: BoardStore;
   beforeEach(() => { localStorage.clear(); store = new BoardStore(); });
-  const draft = (ownerId: string, area = 'Reporting') => ({ title: 'Do it', ownerId, area, project: 'UoM', status: 'Not started', due: '', notes: '' });
+  const draft = (ownerId: string, area = 'Reporting') => ({ title: 'Do it', ownerIds: [ownerId], area, project: 'UoM', status: 'Not started', due: '', notes: '' });
 
   it('numbers items in order and remembers them across a reload', () => {
     const a = store.addMember(' Ann ', 'Lead');
@@ -36,10 +38,10 @@ describe('BoardStore', () => {
 
   it('leaves a removed person’s items on the board, unowned, and clears their leads', () => {
     const a = store.addMember('Ann'); const b = store.addMember('Bob');
-    store.addItem(draft(a)); store.setLead('Reporting', a); store.setLead('SSO', b);
+    store.addItem(draft(a)); store.addItem({ ...draft(a), ownerIds: [a, b] }); store.setLead('Reporting', a); store.setLead('SSO', b);
     store.removeMember(a);
     expect(store.data().members.map(m => m.name)).toEqual(['Bob']);
-    expect(store.data().items[0].ownerId).toBe('');
+    expect(store.data().items.map(i => i.ownerIds)).toEqual([[], [b]]);
     expect(store.data().leads).toEqual({ SSO: b });
   });
 

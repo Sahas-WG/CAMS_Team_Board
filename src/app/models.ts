@@ -13,8 +13,8 @@ export interface Item {
   /** Short display number, e.g. "T12". Unique within the board. */
   id: string;
   title: string;
-  /** Member.id of whoever is doing it; '' when nobody is. */
-  ownerId: string;
+  /** Member.id of everyone doing it. Several ids make it a shared card; empty means nobody owns it yet. */
+  ownerIds: string[];
   /** The broad responsibility it belongs to, e.g. "Reporting". Free text. */
   area: string;
   /** The client or engagement it is for, e.g. "UoM". Free text, optional. */

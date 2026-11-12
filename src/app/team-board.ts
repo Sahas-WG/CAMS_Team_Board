@@ -3,7 +3,11 @@ import { BoardData, Item, Member } from './models';
 /** Which cards the board shows: work still open, open work due within two weeks, or everything. */
 export type BoardMode = 'open' | 'soon' | 'all';
 
-export interface BoardCard { item: Item; done: boolean; overdue: boolean; soon: boolean; dueDate?: Date; }
+export interface BoardCard {
+  item: Item; done: boolean; overdue: boolean; soon: boolean; dueDate?: Date;
+  /** The people on the card, in board order. More than one makes it a shared card. */
+  owners: Member[];
+}
 
 /** One broad responsibility: a whole area, shown once, under the one person who leads it.
  *  It covers every item in the area, whoever owns the individual items. */
@@ -51,7 +55,8 @@ export function buildBoard(data: BoardData, today: Date, mode: BoardMode, projec
     const done = isDone(item);
     const dueDate = parseDue(item.due);
     const end = dueDate ? dueDate.getTime() : null;
-    return { item, done, dueDate, overdue: !done && end != null && end < t0, soon: !done && end != null && end <= t0 + SOON_DAYS * DAY };
+    const owners = data.members.filter(m => item.ownerIds.includes(m.id));
+    return { item, done, dueDate, owners, overdue: !done && end != null && end < t0, soon: !done && end != null && end <= t0 + SOON_DAYS * DAY };
   };
   const rank = (c: BoardCard) => c.done ? 4 : c.overdue ? 0 : /^in progress/i.test(c.item.status) ? 1 : /^blocked/i.test(c.item.status) ? 2 : 3;
   const order = (a: BoardCard, b: BoardCard) =>
@@ -62,7 +67,7 @@ export function buildBoard(data: BoardData, today: Date, mode: BoardMode, projec
   const areaShown = (ar: BoardArea) => mode === 'all' ? true : mode === 'soon' ? ar.cards.some(c => c.soon) : ar.open > 0;
   const allAreas = areasOf(items.map(card).sort(order)).map(ar => {
     const owners = new Map<Member, number>();
-    for (const c of ar.cards) { const m = byId.get(c.item.ownerId); if (m) owners.set(m, (owners.get(m) ?? 0) + 1); }
+    for (const c of ar.cards) for (const m of c.owners) owners.set(m, (owners.get(m) ?? 0) + 1);
     const picked = byId.get(data.leads[ar.name] ?? '');
     // no lead chosen: whoever owns most of its items (the earlier person on the board on a tie)
     const inferred = data.members.filter(m => owners.has(m)).sort((a, b) => owners.get(b)! - owners.get(a)!)[0];
@@ -83,10 +88,23 @@ export function buildBoard(data: BoardData, today: Date, mode: BoardMode, projec
     };
   };
 
-  const cols = data.members.map(m => column(m.id, m.name, m.role, false, items.filter(i => i.ownerId === m.id)));
-  const orphans = items.filter(i => !byId.has(i.ownerId));
+  const cols = data.members.map(m => column(m.id, m.name, m.role, false, items.filter(i => i.ownerIds.includes(m.id))));
+  const orphans = items.filter(i => !i.ownerIds.some(id => byId.has(id)));
   if (orphans.length || allAreas.some(ar => !ar.leadId)) cols.push(column(UNASSIGNED, 'Unassigned', 'Nobody owns these yet', true, orphans));
   return cols;
+}
+
+/** Open and overdue counts over distinct tasks, so a shared card is counted once, not once per lane. */
+export function boardTotals(data: BoardData, today: Date, project = '') {
+  const cols = buildBoard(data, today, 'all', project);
+  const seen = new Map<string, BoardCard>();
+  for (const c of cols) for (const k of c.cards) seen.set(k.item.id, k);
+  const cards = [...seen.values()];
+  return {
+    open: cards.filter(c => !c.done).length,
+    overdue: cards.filter(c => c.overdue).length,
+    unassigned: cols.find(c => c.unassigned)?.open ?? 0,
+  };
 }
 
 /** Roll cards up by area. Busiest area first; an area with nothing open sinks to the bottom. */

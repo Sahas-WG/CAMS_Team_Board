@@ -7,7 +7,8 @@ Sequencer app and is a separate project with no dependency on it.
 ## What it does
 
 - **Tasks view.** A lane per person. Each card is a task with its number, status, responsibility,
-  project and due date. Overdue work sorts to the top; finished work is struck through.
+  project and due date. Overdue work sorts to the top; finished work is struck through. A task can
+  have several owners: a shared card shows in each of their lanes with everyone's initials on it.
 - **Responsibilities view.** Each responsibility (for example Reporting) appears once, under the one
   person who leads it, with progress and the next due date. Click a card to list its tasks. The lead
   is whoever owns most of its tasks until you pick one from the Lead dropdown on the card.

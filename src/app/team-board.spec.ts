@@ -1,9 +1,9 @@
-import { buildBoard, initialsOf, parseDue, UNASSIGNED } from './team-board';
+import { boardTotals, buildBoard, initialsOf, parseDue, UNASSIGNED } from './team-board';
 import { BoardData, Item, Member } from './models';
 
 const member = (id: string, name: string): Member => ({ id, name, role: '' });
 const item = (id: string, ownerId: string, status: string, due = '', area = 'General', project = ''): Item =>
-  ({ id, title: 'Item ' + id, ownerId, area, project, status, due, notes: '' });
+  ({ id, title: 'Item ' + id, ownerIds: ownerId ? ownerId.split('+') : [], area, project, status, due, notes: '' });
 const board = (items: Item[], leads: Record<string, string> = {}): BoardData =>
   ({ members: [member('a', 'Ann Lee'), member('b', 'Bob Ray'), member('c', 'Cy')], items, leads, nextId: 99 });
 
@@ -60,6 +60,25 @@ describe('buildBoard', () => {
   it('sorts T10 after T9', () => {
     const data = board([item('T10', 'a', 'Not started'), item('T9', 'a', 'Not started')]);
     expect(buildBoard(data, today, 'all')[0].cards.map(c => c.item.id)).toEqual(['T9', 'T10']);
+  });
+
+  describe('shared cards', () => {
+    const data = board([item('S1', 'a+b', 'Not started', '2026-11-01'), item('S2', 'b+gone', 'Not started'), item('S3', 'gone', 'Not started')]);
+
+    it('shows a shared card in each owner\u2019s lane, with everyone on it', () => {
+      const cols = buildBoard(data, today, 'all');
+      expect(cols.find(c => c.key === 'a')!.cards.map(c => c.item.id)).toEqual(['S1']);
+      expect(cols.find(c => c.key === 'b')!.cards.map(c => c.item.id)).toEqual(['S1', 'S2']);
+      expect(cols.find(c => c.key === 'a')!.cards[0].owners.map(m => m.id)).toEqual(['a', 'b']);
+    });
+
+    it('keeps a card out of Unassigned while one valid owner remains', () => {
+      expect(buildBoard(data, today, 'all').find(c => c.unassigned)!.cards.map(c => c.item.id)).toEqual(['S3']);
+    });
+
+    it('counts a shared card once in the board totals', () => {
+      expect(boardTotals(data, today)).toEqual({ open: 3, overdue: 1, unassigned: 1 });
+    });
   });
 
   describe('areas', () => {
