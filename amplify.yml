@@ -1,0 +1,19 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        # Angular 20 needs Node 20+. Pin it so the build image's default doesn't break the build.
+        - nvm use 20 || nvm install 20
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    # Angular's application builder nests the deployable site under browser/
+    baseDirectory: dist/team-board/browser
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*

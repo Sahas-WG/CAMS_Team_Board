@@ -1,0 +1,184 @@
+<header class="topbar">
+  <img class="logo" src="assets/cams-logo-mark.png" alt="CAMS" />
+  <div class="brand"><b>Team Board</b><span>Who is carrying what</span></div>
+  <div class="tools">
+    <button class="btn btn-ghost" (click)="exportBoard()" title="Download the board as a file"><app-icon name="download" [size]="15" /> Export</button>
+    <label class="btn btn-ghost" title="Load a board from a file">
+      <app-icon name="upload" [size]="15" /> Import
+      <input type="file" accept=".json,application/json" (change)="importBoard($event)" hidden />
+    </label>
+    <button class="btn btn-secondary" (click)="newMember()"><app-icon name="plus" [size]="15" /> Person</button>
+  </div>
+</header>
+
+<main class="content">
+  @if (!store.data().members.length) {
+    <div class="welcome">
+      <h1>Start with your team</h1>
+      <p>Add each person as a lane, then give them tasks. Nothing leaves this browser unless you export it.</p>
+      <button class="btn btn-primary" (click)="newMember()"><app-icon name="plus" [size]="15" /> Add the first person</button>
+    </div>
+  } @else {
+    <div class="bar">
+      <div class="views">
+        <button [class.on]="view() === 'tasks'" (click)="view.set('tasks')">Tasks</button>
+        <button [class.on]="view() === 'areas'" (click)="view.set('areas')">Responsibilities</button>
+      </div>
+      <div class="modes">
+        @for (m of modes; track m.key) {
+          <button class="filter" [class.active]="mode() === m.key" (click)="mode.set(m.key)">{{ m.label }}</button>
+        }
+      </div>
+      @if (store.projectNames().length) {
+        <select class="ein proj" [value]="project()" (change)="project.set($any($event.target).value)" title="Show one project">
+          <option value="">All projects</option>
+          @for (p of store.projectNames(); track p) { <option [value]="p">{{ p }}</option> }
+        </select>
+      }
+      <div class="sum">
+        <span><b>{{ totals().open }}</b> open</span>
+        <span [class.bad]="totals().overdue"><b>{{ totals().overdue }}</b> overdue</span>
+        @if (totals().unassigned) { <span class="warn"><b>{{ totals().unassigned }}</b> unassigned</span> }
+      </div>
+    </div>
+
+    <div class="board">
+      @for (c of columns(); track c.key; let i = $index) {
+        <section class="col" [class.un]="c.unassigned" [style.--pc]="c.unassigned ? null : personColour(i)">
+          <header class="col-hd">
+            <span class="av">{{ c.initials }}</span>
+            @if (c.unassigned) {
+              <div class="nm"><div class="n">{{ c.name }}</div><div class="r">{{ c.role }}</div></div>
+            } @else {
+              <button class="nm" (click)="editMember(c.key)" title="Edit this person">
+                <div class="n">{{ c.name }}</div><div class="r">{{ c.role || 'No role' }}</div>
+              </button>
+            }
+            @if (c.overdue) { <span class="late" [title]="c.overdue + ' overdue'">{{ c.overdue }} late</span> }
+            <span class="cnt" [title]="c.open + ' open, ' + c.done + ' done'">{{ c.open }}</span>
+            <button class="add" (click)="newItem(c.key)" title="Add a task here"><app-icon name="plus" [size]="14" /></button>
+          </header>
+
+          <div class="cards">
+            @if (view() === 'areas') {
+              @for (a of c.areas; track a.name) {
+                <article class="card area" [class.alldone]="!a.open" (click)="toggleArea(a.name)">
+                  <div class="a-hd">
+                    <span class="a-nm">{{ a.name }}</span>
+                    <span class="a-n" [title]="a.done + ' of ' + a.total + ' done'">{{ a.done }}/{{ a.total }}</span>
+                  </div>
+                  <div class="a-bar"><span [style.width.%]="100 * a.done / a.total"></span></div>
+                  <div class="a-ft">
+                    <span>
+                      @if (a.inProgress) { <b class="ip">{{ a.inProgress }} in progress</b> }
+                      @else if (a.open) { {{ a.open }} to start }
+                      @else { Done }
+                      @if (a.overdue) { <b class="late"> · {{ a.overdue }} late</b> }
+                    </span>
+                    @if (a.nextDue) { <span class="due">Next {{ fmtDateShort(a.nextDue) }}</span> }
+                  </div>
+                  <div class="a-lead" (click)="$event.stopPropagation()">
+                    <label>Lead
+                      <select class="ein" [value]="a.leadId ?? ''" (change)="setLead(a.name, $event)"
+                              [title]="a.chosen ? 'Chosen lead' : 'Suggested from who owns most of the tasks'">
+                        @if (!a.leadId) { <option value=""></option> }
+                        @for (m of store.data().members; track m.id) { <option [value]="m.id">{{ m.name }}</option> }
+                      </select>
+                    </label>
+                    @if (a.helpers.length) { <span class="with" title="Also own tasks in this area">with {{ a.helpers.join(', ') }}</span> }
+                  </div>
+                  @if (isAreaOpen(a.name)) {
+                    <ul class="a-list">
+                      @for (k of a.cards; track k.item.id) {
+                        <li [class.done]="k.done" [class.late]="k.overdue" (click)="editItem(k.item); $event.stopPropagation()">
+                          <span class="chip" [class]="statusClass(k.item.status)" [title]="k.item.status"></span>
+                          <span class="t">{{ k.item.title }}</span>
+                        </li>
+                      }
+                    </ul>
+                  }
+                </article>
+              } @empty {
+                <div class="none">{{ emptyText() }}</div>
+              }
+            } @else {
+              @for (k of c.cards; track k.item.id) {
+                <article [class]="'card task ' + statusClass(k.item.status)" [class.done]="k.done" [class.late]="k.overdue"
+                         [title]="k.item.notes || 'Click to edit'" (click)="editItem(k.item)">
+                  <div class="top">
+                    <span class="id">{{ k.item.id }}</span>
+                    <span class="chip" [class]="statusClass(k.item.status)">{{ k.item.status }}</span>
+                  </div>
+                  <div class="ttl">{{ k.item.title }}</div>
+                  <div class="ft">
+                    <span class="tag">{{ k.item.area }}{{ k.item.area && k.item.project ? ' · ' : '' }}{{ k.item.project }}</span>
+                    @if (k.dueDate) { <span class="due" [class.late]="k.overdue" [title]="k.overdue ? 'Overdue' : 'Due'">{{ fmtDateShort(k.dueDate) }}</span> }
+                  </div>
+                </article>
+              } @empty {
+                <div class="none">{{ emptyText() }}</div>
+              }
+            }
+          </div>
+        </section>
+      }
+    </div>
+  }
+</main>
+
+@if (itemDraft(); as d) {
+  <div class="scrim" (click)="itemDraft.set(null)">
+    <form class="dlg" (click)="$event.stopPropagation()" (ngSubmit)="saveItem()">
+      <h2>{{ d.id ? 'Task ' + d.id : 'New task' }}</h2>
+      <label class="f full"><span>Task</span>
+        <input class="fin" name="title" [(ngModel)]="d.title" placeholder="What needs doing" required autofocus /></label>
+      <label class="f"><span>Owner</span>
+        <select class="fin" name="owner" [(ngModel)]="d.ownerId">
+          <option value="">Unassigned</option>
+          @for (m of store.data().members; track m.id) { <option [value]="m.id">{{ m.name }}</option> }
+        </select></label>
+      <label class="f"><span>Status</span>
+        <select class="fin" name="status" [(ngModel)]="d.status">
+          @for (s of statuses; track s) { <option [value]="s">{{ s }}</option> }
+        </select></label>
+      <label class="f"><span>Responsibility</span>
+        <input class="fin" name="area" [(ngModel)]="d.area" list="areas" placeholder="e.g. Reporting" /></label>
+      <label class="f"><span>Project</span>
+        <input class="fin" name="project" [(ngModel)]="d.project" list="projects" placeholder="e.g. UoM" /></label>
+      <label class="f"><span>Due</span>
+        <input class="fin" name="due" type="date" [(ngModel)]="d.due" /></label>
+      <label class="f full"><span>Notes</span>
+        <textarea class="fin" name="notes" rows="3" [(ngModel)]="d.notes"></textarea></label>
+      <datalist id="areas">@for (a of store.areaNames(); track a) { <option [value]="a"></option> }</datalist>
+      <datalist id="projects">@for (p of store.projectNames(); track p) { <option [value]="p"></option> }</datalist>
+      <div class="acts">
+        @if (d.id) { <button type="button" class="btn btn-ghost danger" (click)="deleteItem()"><app-icon name="trash" [size]="14" /> Delete</button> }
+        <span class="sp"></span>
+        <button type="button" class="btn btn-ghost" (click)="itemDraft.set(null)">Cancel</button>
+        <button type="submit" class="btn btn-primary">{{ d.id ? 'Save' : 'Add task' }}</button>
+      </div>
+    </form>
+  </div>
+}
+
+@if (memberDraft(); as d) {
+  <div class="scrim" (click)="memberDraft.set(null)">
+    <form class="dlg narrow" (click)="$event.stopPropagation()" (ngSubmit)="saveMember()">
+      <h2>{{ d.id ? 'Edit person' : 'New person' }}</h2>
+      <label class="f full"><span>Name</span>
+        <input class="fin" name="name" [(ngModel)]="d.name" placeholder="Full name" required autofocus /></label>
+      <label class="f full"><span>Role</span>
+        <input class="fin" name="role" [(ngModel)]="d.role" placeholder="e.g. Project Coordinator" /></label>
+      <div class="acts">
+        @if (d.id) {
+          <button type="button" class="btn btn-ghost danger" (click)="deleteMember()"><app-icon name="trash" [size]="14" /> Remove</button>
+          <button type="button" class="btn btn-ghost" (click)="moveMember(-1)" title="Move this lane left">←</button>
+          <button type="button" class="btn btn-ghost" (click)="moveMember(1)" title="Move this lane right">→</button>
+        }
+        <span class="sp"></span>
+        <button type="button" class="btn btn-ghost" (click)="memberDraft.set(null)">Cancel</button>
+        <button type="submit" class="btn btn-primary">{{ d.id ? 'Save' : 'Add person' }}</button>
+      </div>
+    </form>
+  </div>
+}
