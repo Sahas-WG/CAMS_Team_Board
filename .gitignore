@@ -21,3 +21,6 @@ Thumbs.db
 
 # Local tooling
 .claude/launch.json
+
+# Real team boards (people and client names): keep out of the repository
+/team-tasks*.json
